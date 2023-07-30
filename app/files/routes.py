@@ -54,3 +54,26 @@ async def list_files(db: Session = Depends(get_db), current_user=Depends(current
     except Exception as e:
         print(e)
         raise HTTPException(status_code=400, detail=str(e))
+    
+@router.delete("/files/{file_id}", response_model=file_schemas.File)
+async def delete_file(file_id: int, db: Session = Depends(get_db), current_user=Depends(current_user)):
+    try:
+        file_to_delete = await crud.get_file_by_id(db, file_id=file_id)
+        if not file_to_delete:
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        if file_to_delete.user_id != str(current_user.id):
+            raise HTTPException(status_code=403, detail="Not enough permissions")
+
+        await crud.delete_file(db, file_id=file_id)
+
+        # Optionally, you can also delete the actual file from disk
+        os.remove(file_to_delete.file_path)
+
+        return file_schemas.File(**file_to_delete.__dict__)
+    
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        print(e)
+        return {"error": str(e)}

@@ -11,6 +11,12 @@ async def get_user_file_by_name(db: AsyncSession, *, filename: str, user_id: str
     file = result.scalars().first()
     return file
 
+async def get_file_by_id(db: AsyncSession, *, file_id: int):
+    stmt = select(models.File).where(models.File.id == file_id)
+    result = await db.execute(stmt)
+    file = result.scalars().first()
+    return file
+
 async def get_files_for_user(db: AsyncSession, *, user_id: str):
     stmt = select(models.File).where(models.File.user_id == user_id)
     result = await db.execute(stmt)

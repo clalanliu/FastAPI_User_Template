@@ -3,7 +3,6 @@ from pydantic import BaseModel
 
 class FileBase(BaseModel):
     filename: str
-    file_path: str
 
     class Config:
         from_attributes = True
@@ -11,6 +10,7 @@ class FileBase(BaseModel):
 
 class FileCreate(FileBase):
     user_id: str
+    file_path: str
 
 
 class File(FileBase):
