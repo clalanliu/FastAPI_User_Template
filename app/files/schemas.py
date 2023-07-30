@@ -10,7 +10,7 @@ class FileBase(BaseModel):
 
 
 class FileCreate(FileBase):
-    pass
+    user_id: str
 
 
 class File(FileBase):

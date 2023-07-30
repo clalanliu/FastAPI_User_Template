@@ -1,4 +1,5 @@
 import os
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
@@ -17,20 +18,21 @@ router = APIRouter()
 @router.post("/files/", response_model=file_schemas.File)
 async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db), current_user = Depends(current_user)):
     try:
+        user_folder_path = os.path.join(UP_LODED_FILE_ROOT, str(current_user.id))
+        file_location = os.path.join(user_folder_path, file.filename)
         existing_file = await crud.get_user_file_by_name(db, filename=file.filename, user_id=str(current_user.id))
         if existing_file:
-            raise HTTPException(status_code=400, detail="File with the same name already exists.")
-
-        user_folder_path = os.path.join(UP_LODED_FILE_ROOT, str(current_user.id))
+            os.remove(file_location)
+            # if file data is stored in the db, we need to delete it before we can replace it
+            await crud.delete_file(db=db, file_id=existing_file.id)
 
         if not os.path.exists(user_folder_path):
             os.makedirs(user_folder_path)
 
-        file_location = os.path.join(user_folder_path, file.filename)
         with open(file_location, "wb+") as file_object:
             file_object.write(await file.read())
 
-        file_schema = file_schemas.FileCreate(filename=file.filename, file_path=file_location)
+        file_schema = file_schemas.FileCreate(filename=file.filename, file_path=file_location, user_id=str(current_user.id))
         db_file = await crud.create_file(db=db, file=file_schema)
 
         return db_file
@@ -41,3 +43,14 @@ async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db
     except Exception as e:
         print(e)
         return {"error": str(e)}
+    
+    
+@router.get("/files/", response_model=List[file_schemas.File])
+async def list_files(db: Session = Depends(get_db), current_user=Depends(current_user)):
+    try:
+        files = await crud.get_files_for_user(db, user_id=str(current_user.id))
+        files = [file_schemas.File(**f.__dict__) for f in files]
+        return files
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=400, detail=str(e))
