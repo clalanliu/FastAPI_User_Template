@@ -3,7 +3,7 @@ from app.files.routes import router as file_router
 
 from app.core.database import create_db_and_tables
 from app.users.schemas import UserCreate, UserRead
-from app.users.users import fastapi_users
+from app.core.crud import fastapi_users
 
 app = FastAPI()
 
