@@ -4,8 +4,8 @@ import app.files.models as models
 import app.files.schemas as schemas
 
 
-async def get_file_by_name(db: AsyncSession, *, filename: str):
-    stmt = select(models.File).where(models.File.filename == filename)
+async def get_user_file_by_name(db: AsyncSession, *, filename: str, user_id: str):
+    stmt = select(models.File).where(models.File.username == user_id).where(models.File.filename == filename)
     result = await db.execute(stmt)
     file = result.scalars().first()
     return file
